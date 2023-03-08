@@ -575,3 +575,219 @@ int main(int argc, char* argv[] )
 - 3. 用 git add . 將修改加入帳冊 (git status 會秀紅色or綠色)
 - 4. 用 git commit -m "你的訊息" 來確認、認可你的修改 (要先git config 設定名字及email)
 - 5. 用 git push 推送上雲端
+
+# Week04
+
+電腦圖學 2023-03-08 Week04
+1. 主題: 旋轉 Rotate
+2. 實作: glRotatef(角度, x, y, z);
+3. 主題: 矩陣 Matrix
+4. 利用 mouse motion 來控制
+
+## step01-1_下載課本的範例 跑Transformation.exe 試著了解今天的主題「旋轉Rotate」對應的glRotatef(角度, x, y, z) 的意思
+
+- https://jsyeh.org/3dcg10/
+- 下載 windows.zip => 下載\windows\Transformation.exe
+- 下載 data.zip    => 下載\windows\data\模型
+
+## step01-2_前面了解x軸轉、y軸轉, 現在要用 glRotatef(角度, 0, 0, 1); 了解對z軸轉的意思。首先要了解z軸怎麼出來的, 是用右手座標系統, 把手掌從x掃到y時, 由姆指的方向決定z軸的方向。再來是真的旋轉時, 右手姆指當旋轉軸, 再看你的其餘4指是往哪個方向轉
+
+## step01-3_接下來是應用的時間。如果是X軸旋轉、如果是Y軸旋轉、如果是Z軸旋轉,都試過一次。最後的難題, 是如果旋轉軸是 (1,1,0) 這個斜斜的旋轉軸, 請問人會怎麼轉, 技巧是想像買鹹酥雞時, 那個竹籤是旋轉軸的話, 你插下去的鹹酥雞會怎麼轉動, 一樣使用右手「按個讚」來想像它怎麼轉動
+
+
+## step02-0_實作, File-New-Project, GLUT專案(要先把桌面的freeglut目錄變出來,把lib目錄裡的libfreeglut.a 複製成 libglut32.a), 存 week04-1_rotate 專案
+
+
+## step02-1_接下來,把今天教的 glRotatef(angle, 0, 1, 0) 拿來用, 記得前後要有 glPushMatrix() 及 glPopMatrix() 包起來。最前面宣告全域變數 float angle=0; 在 display() 最後面 angle++ 改變它。在 glutDisplayFunc(display)的旁邊加上 glutIdleFunc(display) 讓它有空idle時,就呼叫 display() 重畫畫面。
+
+```cpp
+///看了程式之後, 把程式先備份在 Notepad++ 等一下可以參考
+///再把上週的程式 copy 過來
+///程式碼全刪,換我們上週教的10行
+#include <GL/glut.h>
+float angle = 0; ///step02-1 宣告global全域變數 angle
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); ///清背景
+    glPushMatrix(); ///step02-1 備份矩陣
+        glRotatef(angle, 0, 1, 0); ///step02-1 旋轉 angle 角度
+        glutSolidTeapot( 0.3 );
+    glPopMatrix();  ///step02-1 還原矩陣
+    glutSwapBuffers();
+    angle++; ///step02-1 把角度++
+}
+int main(int argc, char* argv[] )
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week04");
+
+    glutDisplayFunc(display);
+    glutIdleFunc(display); ///step02-1 有空idle時,就重畫畫面
+    glutMainLoop();
+}
+```
+
+## step02-2_想要加上打光的效果, 有20行程式要加進去, 不過可以copy。week04-2_rotate_light 在程式中, Ctrl-F 找到 light 相關的程式。目前看起來會比較暗,而且轉的方向好像反過來,請別擔心, 之後會改好。
+
+```cpp
+const GLfloat light_ambient[]  = { 0.0f, 0.0f, 0.0f, 1.0f };
+const GLfloat light_diffuse[]  = { 1.0f, 1.0f, 1.0f, 1.0f };
+const GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+const GLfloat light_position[] = { 2.0f, 5.0f, 5.0f, 0.0f };
+
+const GLfloat mat_ambient[]    = { 0.7f, 0.7f, 0.7f, 1.0f };
+const GLfloat mat_diffuse[]    = { 0.8f, 0.8f, 0.8f, 1.0f };
+const GLfloat mat_specular[]   = { 1.0f, 1.0f, 1.0f, 1.0f };
+const GLfloat high_shininess[] = { 100.0f };
+```
+
+```cpp
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    glEnable(GL_LIGHT0);
+    glEnable(GL_NORMALIZE);
+    glEnable(GL_COLOR_MATERIAL);
+    glEnable(GL_LIGHTING);
+
+    glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT,   mat_ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE,   mat_diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR,  mat_specular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
+```
+
+```cpp
+
+///把 week04-1_rotate 的程式, copy 來 week04-2_rotate_light
+///再把177行範例的 2段程式加進來
+#include <GL/glut.h>
+const GLfloat light_ambient[]  = { 0.0f, 0.0f, 0.0f, 1.0f };
+const GLfloat light_diffuse[]  = { 1.0f, 1.0f, 1.0f, 1.0f };
+const GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+const GLfloat light_position[] = { 2.0f, 5.0f, 5.0f, 0.0f };
+
+const GLfloat mat_ambient[]    = { 0.7f, 0.7f, 0.7f, 1.0f };
+const GLfloat mat_diffuse[]    = { 0.8f, 0.8f, 0.8f, 1.0f };
+const GLfloat mat_specular[]   = { 1.0f, 1.0f, 1.0f, 1.0f };
+const GLfloat high_shininess[] = { 100.0f };
+
+void myLight()
+{
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    glEnable(GL_LIGHT0);
+    glEnable(GL_NORMALIZE);
+    glEnable(GL_COLOR_MATERIAL);
+    glEnable(GL_LIGHTING);
+
+    glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT,   mat_ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE,   mat_diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR,  mat_specular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
+}
+
+float angle = 0; ///step02-1 宣告global全域變數 angle
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); ///清背景
+    glPushMatrix(); ///step02-1 備份矩陣
+        glRotatef(angle, 0, 1, 0); ///step02-1 旋轉 angle 角度
+        glutSolidTeapot( 0.3 );
+    glPopMatrix();  ///step02-1 還原矩陣
+    glutSwapBuffers();
+    angle++; ///step02-1 把角度++
+}
+int main(int argc, char* argv[] )
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week04");
+
+    glutDisplayFunc(display);
+    glutIdleFunc(display); ///step02-1 有空idle時,就重畫畫面
+
+    myLight(); ///step02-2 我們自己寫一個 myLight()函式, 裡面有很多行!
+    glutMainLoop();
+}
+```
+
+## step02-3_加點色彩 glColor3f(r,g,b) 另外有 glClearColor(r,g,b,a) 用來清背景的色彩
+
+```cpp
+float angle = 0; ///step02-1 宣告global全域變數 angle
+void display()
+{
+    glClearColor(1,1,1,1); ///Step02-3 用來清背景的色彩 R,G,B,A
+    ///(目前GLUT_RGB不會用到 A)
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); ///清背景
+    glPushMatrix(); ///step02-1 備份矩陣
+        glRotatef(angle, 0, 1, 0); ///step02-1 旋轉 angle 角度
+        glColor3f(1,1,0); ///step02-3 加點色彩
+        glutSolidTeapot( 0.3 );
+    glPopMatrix();  ///step02-1 還原矩陣
+    glutSwapBuffers();
+    angle++; ///step02-1 把角度++
+}
+```
+
+## step03-1_這兩週教的移動、旋轉,程式碼如果對調, 結果會不一樣, 可在今天第一節課的範例裡, 在下方按右鍵, 選 swap translate rotate 交換移動、旋轉的這兩行。要想一套方法,來理解 在邊邊孤獨的轉(自轉)、繞著正中心轉(公轉)
+
+## step03-2_試著在 week04-3_rotate_translate的範例裡, 把兩行程式交換看看
+
+口訣「左耳靠左肩」讓程式從下往上讀。
+
+```
+茶壼
+```
+
+```
+黃色的茶壼
+```
+
+```
+旋轉黃色的茶壼
+```
+
+```
+移動那個「旋轉中的黃色茶壼」
+```
+
+再看另一個程式
+
+```
+茶壼
+```
+
+```
+紅色的茶壼
+```
+
+```
+放在右邊的紅色茶壼
+```
+
+想像在吃喜宴時的紅色大圓桌,有個盤子會轉
+```
+旋轉整個桌子「放在右邊的紅色茶壼」
+```
+
+
+## step03-3_Git備份程式到GitHub
+- 0. 安裝 Git 開 Git Bash
+- 1. 進入桌面 cd desktop  複製下來 git clone 你的網址, 進入 2023graphisa
+- 2. 開啟檔案總管 start .  整理你今天的程式
+- 3. 把修改加到帳冊 git add .
+- 4. 確認你的修改 git commit -m "add week04" 
+- 5. 推送上雲端 git push
