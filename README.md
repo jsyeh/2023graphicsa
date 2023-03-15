@@ -791,3 +791,145 @@ void display()
 - 3. 把修改加到帳冊 git add .
 - 4. 確認你的修改 git commit -m "add week04" 
 - 5. 推送上雲端 git push
+
+
+# Week05
+1. 主題: T-R-T 對特定軸轉動
+2. 複習: 移動-旋轉 vs 旋轉-移動, 縮放
+3. 主題: 矩陣 Matrix 1 2 3 4 5
+4. 實作: 機器手臂的轉動
+
+## step01-0_老師介紹 Blogger, GitHub, Leetcode, 累積你的作品
+
+## step01-1_看課本的範例, 下載 jsyeh.org 的 3dcg10 裡的範例, 重新理解 T-R vs. R-T 的差別。 理解程式碼的方法 左耳碰左肩 從下往上讀。我們試出了「移動到右邊的」「轉動」「長胖的」「藍色的車子」
+
+```cpp
+glTranslatef(0.7, 0, 0); //移動到右邊的
+glRotatef(轉轉轉, 0, 1, 0); //轉動
+glScalef(1.5, 1, 1); //長胖的
+glBegin(...); //藍色的車子
+```
+
+
+## step01-2_如果把範例的 Translate與Rotate交換的話, 則是另一個故事。轉動那行, 其實一直都是把整個世界繞著中心轉動。移動的效果, 是把整個世界往右移動。程式碼的順序不同時, 結合出來的效果不同。你可以用吃喜宴辦桌時, 桌上的大圓盤來思考, 車子被稿到右邊後, 轉動的結果, 好像有一盤菜, 在大家的面前繞世界一圈
+
+```cpp
+glRotatef(轉轉轉, 0, 1, 0); //轉動
+glTranslatef(0.7, 0, 0); //移動到右邊的
+glScalef(1.5, 1, 1); //長胖的
+glBegin(...); //藍色的車子
+```
+
+## step02-1_要開啟CodeBlocks新增GLUT專案,存成 week05-1_TRT_rotate_translate 讓它轉動出效果(對Z軸)。在程式碼裡, 對Z軸轉動, 還有往右移動。但順序不同, 分別用不同的紅色、綠色畫出的茶壼,來看最後一步造成的效果
+
+```cpp
+///Week05-1_TRT_rotate_translate 對z軸轉
+///先把你上週的 week04-1 拿來用 (GitHub上面有哦)
+#include <GL/glut.h>
+float angle = 0;
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); ///清背景
+
+    glColor3f(0, 1, 0); ///綠色的
+    glPushMatrix();
+        glTranslatef(0.8, 0, 0); ///最後是綠色的移動
+        glRotatef(angle, 0, 0, 1); ///改對z軸轉
+        glutSolidTeapot( 0.3 );
+    glPopMatrix();
+
+    glColor3f(1, 0, 0); ///紅色的
+    glPushMatrix();
+        glRotatef(angle, 0, 0, 1);  ///改對z軸轉 ///最後是紅色的轉動
+        glTranslatef(0.8, 0, 0);
+        glutSolidTeapot( 0.3 );
+    glPopMatrix();
+
+    glutSwapBuffers();
+    angle++; ///step02-1 把角度++
+}
+int main(int argc, char* argv[] )
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week04");
+
+    glutDisplayFunc(display);
+    glutIdleFunc(display); ///step02-1 有空idle時,就重畫畫面
+    glutMainLoop();
+}
+
+```
+
+## step02-2_想要了解TRT,老師寫了一個展示練習的程式, 可以在裡面畫圖ToDraw, 也可以把程式碼 像板子一樣,在右邊移動程式的順序。按空白鍵時, angle 會自動增加。點選右邊的 glTranslatef()後,再點左邊可改變glTranslatef()裡面的值, 用這種方法, 試著移動你畫出來的手臂。最後的成品, 是 T-R-T 
+
+```cpp
+myDrawObject(0); ///畫出我們的身體與頭
+glPushMatrix();
+	glTranslatef(+0.18, +0.28, 0); //(3) 最後,把會轉動的手臂,掛在肩膀上
+	glRotatef(angle, 0, 0, 1);     //(2) 再世界對z軸轉,手臂擺好後,剛好像關節在轉
+	glTranslatef(-0.18, -0.28, 0); //(1) 把旋轉中心,放在正中心
+	myDrawObject(1); //我們要轉動的手臂
+glPopMatrix();
+myDrawObject(2); //不小心畫錯了, 當沒看到
+```
+
+## step03-1_介紹 T-R-T 考試(佔一個小作業)
+
+以10702-16202電腦圖學 的考題(奇異博士用手拿著寶石)為例, 講解程式怎麼轉
+
+```cpp
+glPushMatrix();
+glTranslatef(-0.5,-0.9,0); //(3) 最後,把轉動的手肘,掛到正確的位置
+glRotate(-45,0,0,1);  //(2) 轉動,要小心正負號 還有轉動軸
+glTranslatef(-0.8,0.9,0); // 把手肘中心,放到世界中心
+drawHand();
+glPopMatrix();
+```
+
+## step03-2_新開GLUT專案 week05-2_TRT_robot 要畫出手臂轉動的樣子。使用的技巧 T-R-T 的步驟, 先把旋轉中心放在正中心, 再轉動, 最後把整個手臂掛在對應的位置。
+
+```cpp
+///Week05-2_TRT_robot 程式來自 week05-1_TRT_rotate_translate
+///畫出大的身體、畫出手臂
+#include <GL/glut.h>
+float angle = 0;
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); ///清背景
+
+    glColor3f(0, 1, 0); ///綠色的身體
+    glPushMatrix();
+        glutSolidCube(0.5);
+
+        glPushMatrix();
+            glTranslatef(0.25, 0.25, 0);///(3)把整個東西,掛在右上角
+            glRotatef(angle, 0, 0, 1);  ///(2)轉動
+            glTranslatef(0.25, 0.25, 0);///(1)把旋轉中心,放到中心
+            glColor3f(1,0,0); ///紅色的手臂
+            glutSolidCube(0.5);
+        glPopMatrix();
+    glPopMatrix();
+
+    glutSwapBuffers();
+    angle++; ///step02-1 把角度++
+}
+int main(int argc, char* argv[] )
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week04");
+
+    glutDisplayFunc(display);
+    glutIdleFunc(display); ///step02-1 有空idle時,就重畫畫面
+    glutMainLoop();
+}
+```
+
+## step03-3_把程式用Git指令上傳到GitHub
+- 0. 安裝 Git 開啟 Git Bash
+- 1. 進入桌面 cd desktop 雲端複製下載 git clone https://網址 進入目錄 cd 2022graphcsa
+- 2. 開啟檔案總管 start . 整理你的程式(複製)
+- 3. 加入修改 git add .
+- 4. 確認 git commit -m "week05"   (小心, 要先講「你是誰」 git config --global user.email ... 和 user.name
+- 5. 推送上雲端 git push
