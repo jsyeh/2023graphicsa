@@ -933,3 +933,324 @@ int main(int argc, char* argv[] )
 - 3. 加入修改 git add .
 - 4. 確認 git commit -m "week05"   (小心, 要先講「你是誰」 git config --global user.email ... 和 user.name
 - 5. 推送上雲端 git push
+
+# Week06
+
+## step01-1_為了複習考試題目,我們先寫week06-1_TRT_robot2,了解T-R-T的觀念是怎麼建出來的。先貼上週的 week05-2_TRT_robot 再慢慢建出程式碼。比較不同的,在正中心多了一個glutSolidSphere(0.02, 30, 30) 的圓球, 方便你校正
+
+```cpp
+///貼上上週的week05-2_TRT_robot
+#include <GL/glut.h>
+float angle = 0;
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    glutSolidSphere(0.02, 30, 30); ///正中心的圓球
+
+    glPushMatrix();
+        glRotatef(angle, 0, 0, 1);
+        glTranslatef( 0.46, -0.05, 0 ); ///(1) 把轉動的中心,放中心
+        glutSolidTeapot(0.3);
+    glPopMatrix();
+
+    glutSwapBuffers();
+    angle++;
+}
+int main(int argc, char* argv[] )
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week04");
+
+    glutDisplayFunc(display);
+    glutIdleFunc(display);
+    glutMainLoop();
+}
+```
+
+
+## step01-2_剛剛正確轉動的茶壼,可以掛在任意你想要放的位置。有了這些觀念, 便可以進行T-R-T特定軸轉動的小考了。
+
+
+
+```cpp
+///Week06-1_TRT_robot2 貼上上週的week05-2_TRT_robot
+#include <GL/glut.h>
+float angle = 0;
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    glutSolidSphere(0.02, 30, 30); ///正中心的圓球
+
+    glPushMatrix();
+        glTranslatef(-0.5, 0.5, 0);     ///(3) 掛上去
+        glRotatef(angle, 0, 0, 1);      ///(2) 就可以轉動了
+        glTranslatef( 0.46, -0.05, 0 ); ///(1) 把轉動的中心,放中心
+        glutSolidTeapot(0.3);
+    glPopMatrix();
+
+    glutSwapBuffers();
+    angle++;
+}
+int main(int argc, char* argv[] )
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week04");
+
+    glutDisplayFunc(display);
+    glutIdleFunc(display);
+    glutMainLoop();
+}
+```
+
+## step02-1_想要了解階層轉動(Hierarchy) 其實就是很多組的T-R-T配合 push pop 所以 week06-2_TRT_robot3_hierarchy, 把剛剛設定正確轉動的茶壼,掛在另一個茶壼的嘴上
+
+```cpp
+///Week06-2_TRT_robot_hierarchy 改自 Week06-1
+///很多不同的連結狀況, 而且手臂會帶手肘轉動
+#include <GL/glut.h>
+float angle = 0;
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    glutSolidSphere(0.02, 30, 30); ///正中心的圓球
+
+    glutSolidTeapot(0.3); ///step02-1 身體
+
+    glPushMatrix();
+        ///step02-1 先註解掉 ///glTranslatef(-0.5, 0.5, 0);     ///(3) 掛上去
+        glTranslatef(0.49, 0.13, 0); ///step02-2 新的
+        glRotatef(angle, 0, 0, 1);      ///(2) 就可以轉動了
+        glTranslatef( 0.46, -0.05, 0 ); ///(1) 把轉動的中心,放中心
+        glutSolidTeapot(0.3);
+    glPopMatrix();
+
+    glutSwapBuffers();
+    angle++;
+}
+int main(int argc, char* argv[] )
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week04");
+
+    glutDisplayFunc(display);
+    glutIdleFunc(display);
+    glutMainLoop();
+}
+```
+
+## step02-2_要更多層的轉動。可以想像 glPushMatrix() 和 glPopMatrix()很像是程式的大括號, 裡面要往右退一格。外面的動作,會影響到裡面跟著轉動。
+
+```cpp
+///Week06-2_TRT_robot_hierarchy 改自 Week06-1
+///很多不同的連結狀況, 而且手臂會帶手肘轉動
+#include <GL/glut.h>
+float angle = 0;
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    ///glutSolidSphere(0.02, 30, 30); ///正中心的圓球
+    glutSolidTeapot(0.3); ///step02-1 身體
+
+    glPushMatrix(); ///右手臂
+        ///step02-1 先註解掉 ///glTranslatef(-0.5, 0.5, 0);     ///(3) 掛上去
+        glTranslatef(0.49, 0.13, 0); ///step02-2 新的
+        glRotatef(angle, 0, 0, 1);      ///(2) 就可以轉動了
+        glTranslatef( 0.46, -0.05, 0 ); ///(1) 把轉動的中心,放中心
+        glutSolidTeapot(0.3);
+
+        glPushMatrix(); ///右手肘
+            glTranslatef(0.49, 0.13, 0); ///step02-2 新的
+            glRotatef(angle, 0, 0, 1);      ///(2) 就可以轉動了
+            glTranslatef( 0.46, -0.05, 0 ); ///(1) 把轉動的中心,放中心
+            glutSolidTeapot(0.3);
+        glPopMatrix();
+    glPopMatrix();
+
+    glutSwapBuffers();
+    angle++;
+}
+int main(int argc, char* argv[] )
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week04");
+
+    glutDisplayFunc(display);
+    glutIdleFunc(display);
+    glutMainLoop();
+}
+```
+
+## step02-3_要再開一個新的程式week06-3_TRT_robot_arm_hand_left_right,改用上週的 glutSolidCube() 變形成長方形, 慢慢建出它的 T-R-T 多層的關係, 有左手邊的手臂、手肘等。先把簡單的部分做好, 同時發明drawHand()函式幫忙, 讓 display()裡面不要太複雜。
+
+```cpp
+///Week06-3_TRT_robot_arm_hand_right_left 從上週的 week05-2 拿來用
+///畫出大的身體、畫出手臂
+#include <GL/glut.h>
+float angle = 0;
+void drawHand()
+{
+    glPushMatrix();
+        glScalef(1, 0.3, 0.3);
+        glutSolidCube(0.5);
+    glPopMatrix();
+}
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); ///清背景
+
+    glPushMatrix();
+        ///(3) 要掛上去
+        glRotatef(angle, 0,0,1);  ///(2) 轉動
+        glTranslatef(0.25, 0, 0); ///(1) 把中心,放在正中心
+        drawHand();
+    glPopMatrix();
+
+    glutSwapBuffers();
+    angle++; ///step02-1 把角度++
+}
+int main(int argc, char* argv[] )
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week04");
+
+    glutDisplayFunc(display);
+    glutIdleFunc(display); ///step02-1 有空idle時,就重畫畫面
+    glutMainLoop();
+}
+```
+
+## step03-1_想要一層層掛上去, 要怎麼做呢 先把上手臂的 T-R-T都先註解掉,上手臂擺好不要動,才能正確把下手肘「掛正確」。接下來再修改, 讓上手臂也掛在正確的位置動起來
+
+```cpp
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); ///清背景
+
+    glPushMatrix();
+        ///(3) 要掛上去
+        ///glRotatef(angle, 0,0,1);  ///(2) 轉動
+        ///glTranslatef(0.25, 0, 0); ///(1) 把中心,放在正中心
+        ///step03-1 把前面的T-R-T都先註解掉,會較好理解
+        drawHand(); ///上手臂
+        glPushMatrix();
+            ///(3) 要掛上去
+            glRotatef(angle, 0,0,1);  ///(2) 轉動
+            glTranslatef(0.25, 0, 0); ///(1) 把中心,放在正中心
+            drawHand();
+        glPopMatrix();
+    glPopMatrix();
+
+    glutSwapBuffers();
+    angle++; ///step02-1 把角度++
+}
+```
+
+接下來再修改, 讓上手臂也掛在正確的位置動起來
+
+```cpp
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); ///清背景
+
+    glPushMatrix();
+        glTranslatef(0.25, 0, 0); ///(3) 要掛上去
+        glRotatef(angle, 0,0,1);  ///(2) 轉動
+        glTranslatef(0.25, 0, 0); ///(1) 把中心,放在正中心
+        ///step03-1 把前面的T-R-T都先註解掉,會較好理解
+        ///設好後, 再把上面的程式解開來
+        drawHand(); ///上手臂
+        glPushMatrix();
+            glTranslatef(0.25, 0, 0); ///(3) 要掛上去
+            glRotatef(angle, 0,0,1);  ///(2) 轉動
+            glTranslatef(0.25, 0, 0); ///(1) 把中心,放在正中心
+            drawHand();
+        glPopMatrix();
+    glPopMatrix();
+
+    glutSwapBuffers();
+    angle++; ///step02-1 把角度++
+}
+```
+
+## step03-2_今天最後集大成的程式, 是把右半邊的手臂、手肘, 再copy成為左半邊的手臂、手肘。在設定glTranslatef()的參數時, 要想一下到底要動多少。
+
+```cpp
+void display()
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); ///清背景
+    glPushMatrix(); ///右上手臂
+        glTranslatef(0.25, 0, 0); ///(3) 要掛上去
+        glRotatef(angle, 0,0,1);  ///(2) 轉動
+        glTranslatef(0.25, 0, 0); ///(1) 把中心,放在正中心
+        ///step03-1 把前面的T-R-T都先註解掉,會較好理解
+        ///設好後, 再把上面的程式解開來
+        drawHand(); ///右上手臂
+
+        glPushMatrix();///右下手肘
+            glTranslatef(0.25, 0, 0); ///(3) 要掛上去
+            glRotatef(angle, 0,0,1);  ///(2) 轉動
+            glTranslatef(0.25, 0, 0); ///(1) 把中心,放在正中心
+            drawHand();///右下手肘
+        glPopMatrix();
+    glPopMatrix();
+
+    glPushMatrix(); ///左上手臂
+        glTranslatef(-0.25, 0, 0); ///(3) 要掛上去
+        glRotatef(angle, 0,0,1);  ///(2) 轉動
+        glTranslatef(-0.25, 0, 0); ///(1) 把中心,放在正中心
+        ///step03-1 把前面的T-R-T都先註解掉,會較好理解
+        ///設好後, 再把上面的程式解開來
+        drawHand(); ///上手臂
+
+        glPushMatrix();///左下手肘
+            glTranslatef(-0.25, 0, 0); ///(3) 要掛上去
+            glRotatef(angle, 0,0,1);  ///(2) 轉動
+            glTranslatef(-0.25, 0, 0); ///(1) 把中心,放在正中心
+            drawHand();///下手肘
+        glPopMatrix();
+    glPopMatrix();
+
+    glutSwapBuffers();
+    angle++; ///step02-1 把角度++
+}
+```
+
+## step03-3_期中考試複習
+
+https://jsyeh.org/gl 裡面有練習的軟體
+
+```cpp
+glPushMatrix(); 備份矩陣
+	glTranslatef(x,y,z);//移動
+	glRotatef(angle, x, y, z);//轉動
+	glScalef(x, y, z);//縮放
+	glBegin(GL_POLYGON);//開始畫,可以用其他的參數
+		glNormal3f(nx, ny, nz);//打光的法向量
+		glTexCoord2f(tx,ty);//貼圖座標
+		glColor3f(r,g,c); //顏色
+		glVertex2f(x,y);//頂點,也可以寫 glVertex3f(x,y,z);
+	glEnd();//結束畫
+glPopMatrix(); 還原矩陣
+```
+
+
+## step03-4_利用Git指令,將今天的程式上傳到GitHub
+
+- 0. 安裝 Git 開啟 Git Bash
+- 1. 進入桌面 cd desktop 複製專案 git clone https://網址 進入目錄 cd 2023graphicsa
+- 2. 開檔案總管 start . 整理你的目錄
+- 3. 加入帳冊 git add .
+- 4. 確認修改
+- 4.0. 先設好 git config --global user.email jsyeh@mail.mcu.edu.tw
+- 4.0. 先設好 git config --global user.name jsyeh
+- 4.1. 確認修改 git commit -m week06
+- 5. 推送上雲端 git push
