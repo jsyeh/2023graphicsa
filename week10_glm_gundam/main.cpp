@@ -29,6 +29,7 @@ int myTexture(char * filename)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img->width, img->height, 0, GL_RGB, GL_UNSIGNED_BYTE, img->imageData);
     return id;
 }
+float angle=0;
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -38,7 +39,11 @@ void display()
         glmFacetNormals(pmodel);
         glmVertexNormals(pmodel, 90);
     }
-    glmDraw(pmodel, GLM_MATERIAL | GLM_TEXTURE);
+    glPushMatrix();
+        glRotatef(angle, 0, 1, 0);
+        glmDraw(pmodel, GLM_MATERIAL | GLM_TEXTURE);
+    glPopMatrix();
+    angle++;
     ///glutSolidTeapot( 0.3 );
     glutSwapBuffers();
 }
@@ -49,6 +54,9 @@ int main(int argc, char** argv)
     glutCreateWindow("week10");
 
     myTexture("Diffuse.jpg");
+    glEnable(GL_DEPTH_TEST);
+
     glutDisplayFunc(display);
+    glutIdleFunc(display);
     glutMainLoop();
 }

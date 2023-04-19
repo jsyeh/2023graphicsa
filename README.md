@@ -1472,3 +1472,144 @@ int main(int argc,char**argv)
 - 4.0. git config --global user.name jsyeh
 - 4.1 git commit -m week07
 - 5. git push
+
+# Week08
+清明連假
+
+# Week09
+期中考週
+ 
+# Week10
+
+電腦圖學 2023-04-19 Week10
+1. 期中考-OpenGL必背10函式
+2. 主題: 3D模型
+3. 主題: OBJ檔
+4. 主題: glm.h glm.cpp
+5. 實作: Gundam 剛彈模型
+
+## step01-1_認識3D模型。先從jsyeh.org的3dcg10下載老師的範例, 跑 Transformation.exe 會把 data 目錄中的 3D模型畫出來。3D模型對應的OBJ檔,會再引用 .mtl 檔對應 material 材質。OBJ檔裡的v對應vertex頂點, vt對應 vertex texture 貼圖座標, vn 對應 vertex normal 打光要用的法向量。 f是點線面的面, 會需要 3個頂點 or 4個以上的頂點。
+
+- https://jsyeh.org/3dcg10/
+
+## step01-2_接下來老師帶大家看 OBJ格式的Wikipedia維基百科的介紹,裡面有說明#註解, v頂點, vt貼圖座標, vn法向量, f面。另外看到它的歷史, 是從 wavefront 到 alias (開發maya的公司),最後被Autodesk併購。接著, 老師介紹課本範例裡 transformation.c 使用了 glm.c 及 glm.h 來簡化讀OBJ模型檔的程式。
+ 
+- https://zh.wikipedia.org/zh-tw/Wavefront_.obj%E6%96%87%E4%BB%B6
+- https://en.wikipedia.org/wiki/Wavefront_.obj_file
+- https://en.wikipedia.org/wiki/Wavefront_Technologies
+- https://en.wikipedia.org/wiki/Alias_Systems_Corporation
+- https://en.wikipedia.org/wiki/Autodesk
+
+## step02-1_接下來要寫自己的專案, 準備好GLUT後, 開 GLUT專案 week10_glm, 裡面先放10行程式。再把 source.zip 裡 glm.h 與 glm.c 放到 week10_glm 目錄裡, glm.c 改成 glm.cpp。再把 3D 模型放到工作執行目錄裡。接下來便可模仿 transformation.c 的程式, 找裡面 glm 出現的地方, 把 include 弄好, 把指標 pmodel 宣告, 再把 display() 裡讀模型、畫模型的程式弄好。
+
+```cpp
+///請把之前的 10行 GLUT程式拿來用
+#include <GL/glut.h>
+#include "glm.h" ///下載 source.zip 有 glm.h 放 week10_glm 目錄裡
+///glm.c 改檔名成 glm.cpp 放在 week10_glm 目錄裡
+///把 glm.cpp 加到專案裡
+///把模型檔 (ex. Al.obj Al.mtl ... ) 複製到 工作執行目錄
+/// Build log 最後一行會說它在哪裡 (in C:\Users\.....\freeglut\bin)
+///最後, 把模型檔畫出來....
+GLMmodel * pmodel = NULL;///有一個模型的指標,先是空的!
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    if(pmodel==NULL){
+        pmodel = glmReadOBJ("Al.obj");
+        glmUnitize(pmodel);
+        glmFacetNormals(pmodel);
+        glmVertexNormals(pmodel, 90);
+    }
+    glmDraw(pmodel, GLM_MATERIAL);
+    ///glutSolidTeapot( 0.3 );
+    glutSwapBuffers();
+}
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week10");
+
+    glutDisplayFunc(display);
+    glutMainLoop();
+}
+```
+
+## step03-1_想要做出有貼圖的Gundam模型, 新增week10_glm_gundam 專案 把week10_glm 的程式拿來用。把Gundam.obj Gundam.mtl Diffuse.jpg 放到工作執行目錄, 把 OpenCV2.1 裝好, 設定好 3個咒語, 把 myTexture 程式拿來用, 在 glutCreateWindow()後, 加入 myTexture("Diffuse.jpg") 並把 GLM_TEXTURE加入glmDraw()裡。就可以做出 Gundam模型了。
+
+```cpp
+///week10_glm_gundam 專案 把week10_glm 的程式, 拿來用!
+#include <GL/glut.h>
+#include "glm.h" ///下載 source.zip 有 glm.h 放 week10_glm_gundam 目錄裡
+///glm.c 改檔名成 glm.cpp 放在 week10_glm_gundam 目錄裡
+///把 glm.cpp 加到專案裡
+///再把 Gundam.obj Gundam.mtl Diffuse.jpg 放到工作執行目錄
+GLMmodel * pmodel = NULL;///有一個模型的指標,先是空的!
+///Step03-1 再把上次week07上課教的 貼圖 拿來用
+///1. OpenCV 2.1 裝好 (桌面/葉正聖老師) 記得加PATH,再重開CodeBlocks
+///2. 設定咒語 Settings-Compiler
+///3. 把 myTexture 的程式拿來用!
+///4. 在 glutCreateWindow()之後, 加一行 myTexture("Diffuse.jpg");
+///   glmDraw(pmodel, GLM_MATERIAL | GLM_TEXTURE);
+#include <opencv/highgui.h> ///使用 OpenCV 2.1 比較簡單, 只要用 High GUI 即可
+#include <opencv/cv.h>
+#include <GL/glut.h>
+int myTexture(char * filename)
+{
+    IplImage * img = cvLoadImage(filename); ///OpenCV讀圖
+    cvCvtColor(img,img, CV_BGR2RGB); ///OpenCV轉色彩 (需要cv.h)
+    glEnable(GL_TEXTURE_2D); ///1. 開啟貼圖功能
+    GLuint id; ///準備一個 unsigned int 整數, 叫 貼圖ID
+    glGenTextures(1, &id); /// 產生Generate 貼圖ID
+    glBindTexture(GL_TEXTURE_2D, id); ///綁定bind 貼圖ID
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); /// 貼圖參數, 超過包裝的範圖T, 就重覆貼圖
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); /// 貼圖參數, 超過包裝的範圖S, 就重覆貼圖
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); /// 貼圖參數, 放大時的內插, 用最近點
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); /// 貼圖參數, 縮小時的內插, 用最近點
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img->width, img->height, 0, GL_RGB, GL_UNSIGNED_BYTE, img->imageData);
+    return id;
+}
+float angle=0;
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    if(pmodel==NULL){
+        pmodel = glmReadOBJ("Gundam.obj");///Step03-1
+        glmUnitize(pmodel);
+        glmFacetNormals(pmodel);
+        glmVertexNormals(pmodel, 90);
+    }
+    glPushMatrix();
+        glRotatef(angle, 0, 1, 0);
+        glmDraw(pmodel, GLM_MATERIAL | GLM_TEXTURE);
+    glPopMatrix();
+    angle++;
+    ///glutSolidTeapot( 0.3 );
+    glutSwapBuffers();
+}
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week10");
+
+    myTexture("Diffuse.jpg");
+    glEnable(GL_DEPTH_TEST);
+
+    glutDisplayFunc(display);
+    glutIdleFunc(display);
+    glutMainLoop();
+}
+```
+
+
+
+## step03-2_Git指令備份程式
+- Git Bash 
+- 複製下來 git clone https://網址
+- git add .
+- 設定 git config --global user.email jsyeh@mail.mcu.edu.tw
+- 設定 git config --global user.name jsyeh
+- git commit -m week10
+- git push
