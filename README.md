@@ -1613,3 +1613,88 @@ int main(int argc, char** argv)
 - 設定 git config --global user.name jsyeh
 - git commit -m week10
 - git push
+
+
+
+# Week11
+
+## step01-1_為了試鍵盤keyboard,新開GLUT專案,week11-1_keyboard, 裡面會有 glutKeyboardFunc(keyboard) 會去叫用 void keyboard(), 呼叫 exit(0) 程式就結束,並return 0
+
+File-New-Project, GLUT專案
+
+```cpp
+///Week11-1_keyboard 學習自GLUT專案的範例
+#include <GL/glut.h>
+void display()
+{
+    glutSolidTeapot( 0.3 );
+    glutSwapBuffers();
+}
+void keyboard(unsigned char key, int x, int y)
+{///step01-1 今天新教的
+    if(key==27) exit(594088); ///學習自GLUT專案的範例
+} ///ESC就會結束
+int main(int argc, char**argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week11");
+
+
+    glutDisplayFunc(display);
+    glutKeyboardFunc(keyboard);///step01-1 今天新教的
+
+    glutMainLoop();
+}
+
+```
+
+
+## step01-2_兩種音樂格式 wav(檔案大,直播播放,簡單) mp3(檔案小,有壓縮,難一點點) 用Notepad++可看檔案前面的3-4個英文單字,代表格式。最簡單播放的是 wav。新GLUT專案 week11-2_keyboard_wav_PlaySound。最前面要 include windows.h 而呼叫 PlaySound("檔名", NULL, SND_ASYNC); 便能播放。其中NULL代表這個播放音樂沒有掛在任何物件下。SND_ASYNC不等待同步,所以播放會馬上繼續。
+
+PlaySoundA()
+
+## step02-1_為了讓大家更了解 PlaySound()的用法, 我們改用大一上教的 File-New-Empty File 空白檔案來示範。寫了 include windows.h 及 PlaySound() 卻出現 link 時 PlaySoundA找不到的問題。原因是 Linker Settings要加1個咒語 winmm 就可以了。這裡改用 SND_SYNC 要等待同步, 以免程式瞬間結束。另外老師講解「絕對路徑」與「相對路徑」的差別。都可以。
+
+```cpp
+///Week11-3_PlaySound.cpp 可是它卻不能執行 因為找不到 PlaySoundA
+///C:\Users\Administrator\Desktop\week11-3_PlaySound.o:week11-3_PlaySound.cpp:(.text+0x2e):
+///  undefined reference to `PlaySoundA@12'
+///PlaySoundA() 其實在 winmm 裡面 所以, step02-1 要手動把 winmm 加到 lib 咒語裡
+/// 比較: OpenCV 要 3咒語, GLUT 要 5咒語。 PlaySound 要 1咒語
+/// Setting-Compiler... 的 Linker Settings 要加上 winmm
+#include <windows.h>
+int main()
+{                         ///要等待同步 SND_SYNC, 不然會瞬間結束
+    PlaySound("do_re_mi\\do.wav", NULL, SND_SYNC);
+    PlaySound("do_re_mi\\do.wav", NULL, SND_SYNC);
+    PlaySound("do_re_mi\\do.wav", NULL, SND_SYNC);
+    PlaySound("do_re_mi\\re.wav", NULL, SND_SYNC);
+    ///PlaySound("C:\\Users\\Administrator\\Desktop\\do_re_mi\\mi.wav", NULL, SND_SYNC);
+}
+///Build log 會寫: Checking for existence: C:\Users\Administrator\Desktop\week11-3_PlaySound.exe
+///Executing: '"C:\Program Files (x86)\CodeBlocks/cb_console_runner.exe" "C:\Users\Administrator\Desktop\week11-3_PlaySound.exe"' (in 'C:\Users\Administrator\Desktop')
+/// 它的執行目錄, 是在 C:\Users\Administrator\Desktop 我們的 do.wav re.wav mi.wav 在 相對目錄裡
+```
+
+## step02-0_介紹做筆記的習慣,可以讓學習的效果更好。老師用自己做筆記的幾個例子來說明, 像是學習寫程式、聽演講、學習AI等。這樣之後才會記起來, 而且別人有遇到問題時, 可以有文件幫助別人。
+
+## step02-2_想要試試 MP3檔, 新開GLUT專案 week11-4_glut_mp3 要再用到工具 CMP3_MCI.h 先把檔案放到同一目錄裡, include "CMP3_MCI.h" 雙引號代表同一目錄的檔案。CMP3_MCI myMP3;宣告物件變數, myMP3.Load("檔名.mp3"); 及 myMP3.Play(); 便能播放。目錄的字串裡, 兩個反斜線, 或一個斜線, 都可以。
+
+## step03-1_講解相對目錄、絕對目錄的意思
+
+## step03-2_最後要講一下Git上傳時的 .gitignore 哪些檔案不備份
+
+在 .gitignore 裡面, 要備份 .dll 檔案, 所以要加上 # 不要擋它
+```
+# *.dll 
+# 因為我們希望也備份 libfreeglut.dll 及 opencv的 .dll 才能讓程式執行
+```
+
+Git Bash
+1. 先 clone 下來, 再編輯 .gitignore
+2. 整理今天的程式 week11 的 4個程式
+3. git add .
+4. git commit -m week11   (之前要 git config --global 設定2個東西)
+5. git push
+

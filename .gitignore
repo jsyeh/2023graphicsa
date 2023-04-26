@@ -14,7 +14,8 @@
 # Compiled Dynamic libraries
 *.so
 *.dylib
-*.dll
+# *.dll 
+# 因為我們希望也備份 libfreeglut.dll 及 opencv的 .dll 才能讓程式執行
 
 # Fortran module files
 *.mod
