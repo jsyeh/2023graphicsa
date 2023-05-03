@@ -1698,3 +1698,192 @@ Git Bash
 4. git commit -m week11   (之前要 git config --global 設定2個東西)
 5. git push
 
+
+# Week12
+
+電腦圖學 2023-05-03 Week12
+1. 主題: 檔案讀寫
+2. 主題: 鍵盤、滑鼠控制角度
+3. 回家作業: 可控制關節角度的模型
+
+## step01-1_今天教檔案讀寫,先試著開檔、寫檔。之前學過的printf()只要稍做改裝 fprintf(), 便能寫檔案。前面的 f 對應 檔案指標 fout = fopen("檔名", "模式"); 
+
+```cpp
+///Week12-1_printf_fprintf.cpp
+/// 要能夠寫檔案
+#include <stdio.h>
+
+int main()
+{///檔案指標 fout = 開檔案("檔名", "用什麼模式")
+    FILE * fout = fopen("file.txt", "w");///w:write
+
+    printf("Hello World\n");
+    fprintf(fout, "Hello World在檔案裡\n");
+
+}
+```
+
+## step01-2_有了 printf() 接下來當然是對應 scanf() 與 fscanf()了。因為剛剛已經有檔案 "file.txt" 所以, 我們可開啟它, 使用 fopen("file.txt", "r") 讀它, 檔案指標換個名字 fin 方便你了解它是 file input 的變數。使用字串去讀它。
+
+```cpp
+#include <stdio.h>
+int main()
+{
+    FILE * fin = fopen("file.txt", "r"); ///前一個範例有寫檔了
+
+    char line[100];
+    fscanf(fin, "%s", line);
+    printf("從file.txt讀到了: %s\n", line);
+
+    fscanf(fin, "%s", line);
+    printf("從file.txt讀到了: %s\n", line);
+}
+```
+
+## step01-3_如果想要在程式中, 又有讀、又有寫,那就要記得 fopen() 配上 fclose()要適時把檔案關起來,讓後面的程式繼續做事。我們期末作品會需要把機器人關節的角度做檔案讀寫, 所以會用 %d 記得在印的時候, 空格、跳行都很重要, 不然數字會黏在一起, 就無法順利讀取了。
+
+```cpp
+///Week12-3
+#include <stdio.h>
+int main()
+{
+    int a[10] = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+    int b[10] = {};
+
+    FILE * fout = fopen("file3.txt", "w");
+    for(int i=0; i<10; i++){
+        printf("%d ", a[i] );
+        fprintf(fout, "%d ", a[i] );
+    }
+    printf("\n");
+    fprintf(fout, "\n");
+    fclose(fout);
+
+    FILE * fin = fopen("file3.txt", "r");
+    for(int i=0; i<10; i++){
+        fscanf(fin, "%d", &b[i] );
+        printf("b%d:%d ", i, b[i] );
+    }
+    fclose(fin);
+}
+```
+
+## step02-1_新的GLUT專案 week12-4_keyboard_mouse 想要用 keyboard mouse 來操控簡單的茶壼。
+
+```cpp
+///week12-4_keyboard_mouse 要用 keyboard mouse 來操控茶壼, 而且可存檔、會自己動
+#include <stdio.h>
+#include <GL/glut.h>
+float teapotX=0, teapotY=0;
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+        glTranslatef(teapotX, teapotY, 0);
+        glutSolidTeapot( 0.3 );
+    glPopMatrix();
+    glutSwapBuffers();
+}
+void mouse(int button, int state, int x, int y)
+{
+    if(state==GLUT_DOWN){
+        teapotX = (x-150)/150.0;
+        teapotY = (150-y)/150.0;
+    }
+    display();
+}
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
+    glutCreateWindow("week12");
+
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse);
+
+    glutMainLoop();
+}
+```
+
+## step02-2_繼續把剛剛的 week12-4_keyboard_mouse 進行改寫, 在按下 mouse 時, 會去寫檔案, 在按下 keyboard 時, 會去讀檔案。如果檔案指標是一開始預設值 NULL 的話, 程式會自己進行 fopen() 把指標放好值。記得檔案要fclose之後, 才能交給下一個指標做另一件事。file4.txt 檔案會在working_dir工作執行目錄裡。
+
+```cpp
+///week12-4_keyboard_mouse 要用 keyboard mouse 來操控茶壼, 而且可存檔、會自己動
+///在按mosue時,除了改 teapotX, teapotY 座標, 並重畫, 還要再存座標
+///存檔時,會在工作執行目錄 working_dir
+///在CodeBlocks Project-Properties 裡面的第二個Build targets 下面可以設定
+///把它從 C:\Users\Administrator\Desktop\freeglut\bin 改成 . (小數點,現在目錄的意思)
+/// 記得, Debug 和 Release 兩個都要改
+/// 而且要 File-Save Everything (Ctrl-Shift-S全部存檔)才會將 .cbp 專案檔存檔
+#include <stdio.h>
+#include <GL/glut.h>
+FILE * fout = NULL; ///step02-2 一開始,檔案沒有開, NULL
+FILE * fin = NULL; ///step02-2 要讀檔用的指標, 一開始也是 NULL
+float teapotX=0, teapotY=0;
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+        glTranslatef(teapotX, teapotY, 0);
+        glutSolidTeapot( 0.3 );
+    glPopMatrix();
+    glutSwapBuffers();
+}
+void mouse(int button, int state, int x, int y)
+{
+    if(state==GLUT_DOWN){
+        teapotX = (x-150)/150.0;
+        teapotY = (150-y)/150.0;
+        if(fout==NULL) fout = fopen("file4.txt", "w"); ///step02-2 沒開檔,就開
+        fprintf(fout, "%f %f\n", teapotX, teapotY); ///step02-2 要再存座標
+    }
+    display();
+}
+void keyboard(unsigned char key, int x, int y) ///step02-2 keyboard函式
+{
+    if(fin==NULL){ ///step02-2 如果檔案還沒 fopen(), 就開它
+        fclose(fout); ///前面mouse會開fout指標, 所以要關掉
+        fin = fopen("file4.txt", "r"); ///step02-2 沒開檔,就開
+    }
+    fscanf(fin, "%f %f", &teapotX, &teapotY); ///step02-2 真的讀檔
+    display(); ///step02-2 重畫畫面
+}
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
+    glutCreateWindow("week12");
+
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse);
+    glutKeyboardFunc(keyboard); ///step02-2 keyboard要做事囉(開檔、讀檔)
+
+    glutMainLoop();
+}
+```
+
+## step03-1_工作執行目錄 working_dir 在 freeglut 的 bin 很奇怪, 上週利用 Notepad++ 改到現在專案的目錄 . 好像比較帥。CodeBlocks裡 Project-Properties 裡面第二個 Build targets 裡面可以改。不過改成 . (小數點, 代表現在所在目錄) 後, 執行時竟然出現 freeglut.dll 找不到的歷史餘毒的問題。把 dll 檔手動複製過去, 就可以成功了。
+
+## step03-2_老師本來新開 week12-5_TRT_keyboard_mouse 要再講回家作業, 不過發現一下太難、同學可能聽不懂, 所以臨時把目錄改成 Final_Project 裡面的 Project-Properpties 的 title 也改成 Final_Projet, 專案檔也改成 Final_Project.cbp 以便下週上課時, 可以利用 GitHub 的備份繼續做。
+
+## step03-3_利用Git指令,將今天的程式上傳GitHub
+
+先在 Git Bash 裡, 改變目錄、雲端複製下載
+- cd desktop
+- git clone https://github.com/你的帳號/2023graphics
+- cd 2023graphics
+
+接下來, 要 start . 開檔案總管, 整理目錄
+- git status (紅色,可省略)
+- git add . 
+- git status (綠色,可省略)
+
+接下來要設定你的名字
+- git config --global user.email jsyeh@mail.mcu.edu.tw
+- git config --global user.name jsyeh
+
+接下來,是 commit 和 push
+- git commit -m week12
+- git push
+
+
