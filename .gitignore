@@ -5,7 +5,8 @@
 *.slo
 *.lo
 *.o
-*.obj
+# 因為我們希望也備份 3D model 檔
+# *.obj
 
 # Precompiled Headers
 *.gch
@@ -24,8 +25,10 @@
 # Compiled Static libraries
 *.lai
 *.la
-*.a
-*.lib
+# 你在前面加 #號 就可以註解掉
+# *.a
+# *.lib
+# 因為我們希望也備份 freeglut 的 lib 目錄裡的 libfreeglut32.a 等檔案
 
 # Executables
 *.exe
