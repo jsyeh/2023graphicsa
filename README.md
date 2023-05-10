@@ -1887,3 +1887,180 @@ int main(int argc, char** argv)
 - git push
 
 
+# Week13
+
+## step01-1_今天的主題是「綜合練習」,講解今天的任務後,先開啟 Autodesk Maya 來練習,讀入上課用過的 Al.obj 模型 (在data.zip裡), 試著切出幾個部位,方便上課使用 (head.obj body.obj uparmR.obj lowarmR.obj) 
+
+綜合練習
+- Maya 裁切模型
+	- Alt-左鍵: 旋轉
+	- Alt-中鍵: 平移
+	- 滾輸: 縮放
+	- 左鍵: 選取
+	- File-Import 匯入模型
+	- File-Export Selection 匯出模型(OBJ)
+
+## step01-2_使用Git把上週的專案下載下來, 並且用 CodeBlocks開啟專案檔, 把 freeglut 也複製到 Final_Project 裡, 並把專案的 include 目錄、lib 目錄, 都重新設定「相對路徑」。(記得 .gitignore也要把 .lib 和 .a 也解開備份機制)
+
+綜合練習 (用舊的專案)
+- GitHub上面的 Final Project (2023graphicsa裡)
+	- 可用 cd 目錄, 來改變你的目錄
+	- git clone https://github.com/jsyeh/2023graphicsa
+	- start . 開你現在的目錄
+- CodeBlocks 開舊專案 File-Open, 點 Final Project 的 Final_Project.cbp 
+	- 要解決 freeglut 每次要安裝的問題, 直接在 Final_Project 也放一份!!! 
+	- 把freeglut目錄解在 Final_Project 裡, 把lib的libfreeglut.lib做出 libglut32.a
+	- Project-Properties的
+
+## step02-1_模型匯入、組合
+
+- 組合模型
+	- 第10週用的 glm.cpp glm.h 都複製到你的 Final_Project 專案裡
+	- 在專案裡, Add File, 把 glm.cpp 加進去
+	- File-Save everything 才會存檔, 不然會備份到(還沒存檔的)舊檔
+	- 把剛剛截切好的 head.obj body.obj uparmR.obj lowarmR.obj 複製到專案的model目錄
+- 對應的 glm 程式
+	- #include "glm.h"
+	- GLMmodel * body = NULL;
+	- 在 display()裡面
+		- if(body==NULL){
+		-   body = glmReadOBJ("model/body.obj");
+		-   glmUnitize(body);//這行之後會改
+		- }
+		- glmDraw(body, GLM_MATERIAL); //這行之後會改
+
+```cpp
+#include "glm.h" ///week13 step02-1
+GLMmodel * body = NULL; ///week13 step02-1
+```
+
+```cpp
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+        if(body==NULL){///week13 step02-1
+            body = glmReadOBJ("model/body.obj");///week13 step02-1
+            glmUnitize(body); ///week13 step02-1 這行之後會改
+        }
+        glmDraw(body, GLM_MATERIAL);///week13 step02-1這行之後會改
+    glPopMatrix();
+    glutSwapBuffers();
+}
+```
+
+## step02-2_想要有更多的模型,要小心模型的大小,因為glmUnitize()之後不要用,所以找到適當大小後, 使用 glScalef(0.2, 0.2, 0.2) 調成五分之一。把模型依序讀入。
+
+- 程式進行修改
+
+```cpp
+#include "glm.h" ///week13 step02-1
+GLMmodel * head = NULL; ///week13 step02-1
+GLMmodel * body = NULL; ///week13 step02-1
+```
+
+```cpp
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+        if(body==NULL){///week13 step02-1
+            body = glmReadOBJ("model/body.obj");///week13 step02-1
+            glmUnitize(body); ///week13 step02-1 這行之後會改
+        }
+		glmDraw(head, GLM_MATERIAL);///Week13 step03-1
+		glmDraw(body, GLM_MATERIAL);///week13 step02-1這行之後會改
+    glPopMatrix();
+    glutSwapBuffers();
+}
+```
+
+## step03-1_想要用 show[i] 陣列來決定有哪些模型要秀出來
+
+```cpp
+#include "glm.h" ///week13 step02-1
+GLMmodel * head = NULL; ///week13 step02-1
+GLMmodel * body = NULL; ///week13 step02-1
+GLMmodel * uparmR = NULL; ///week13 step02-1
+GLMmodel * lowarmR = NULL; ///week13 step02-1
+int show[4] = {0, 1, 0, 0};/// week13 step03-1 用 show[i] 來決定要不要顯示
+```
+
+```cpp
+void keyboard(unsigned char key, int x, int y) {/// week13 step03-1
+    if(key=='0') show[0] = !show[0];/// week13 step03-1
+    if(key=='1') show[1] = !show[1];/// week13 step03-1
+    if(key=='2') show[2] = !show[2];/// week13 step03-1
+    if(key=='3') show[3] = !show[3];/// week13 step03-1
+    glutPostRedisplay();
+} ///原來的keyboard先註解、不要用
+```
+
+```cpp
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+        glScalef(0.2, 0.2, 0.2); ///week13_step02-2
+        if(body==NULL){///week13 step02-1
+            head = glmReadOBJ("model/head.obj");
+            body = glmReadOBJ("model/body.obj");///week13 step02-1
+            uparmR = glmReadOBJ("model/uparmR.obj");///Week13 step03-1
+            lowarmR = glmReadOBJ("model/lowarmR.obj");///Week13 step03-1
+            ///glmUnitize(body); ///week13 step02-1 這行之後會改
+        }
+        if(show[0]) glmDraw(head, GLM_MATERIAL);///Week13 step03-1
+        if(show[1]) glmDraw(body, GLM_MATERIAL);///week13 step02-1這行之後會改
+        if(show[2]) glmDraw(uparmR, GLM_MATERIAL);///Week13 step03-1
+        if(show[3]) glmDraw(lowarmR, GLM_MATERIAL);///Week13 step03-1
+    glPopMatrix();
+    glutSwapBuffers();
+}
+```
+
+## step03-2_利用 mouse motion 來看看要移動多少, 才能正確把模型放到對的位置
+
+在 display()裡面
+```cpp
+        glPushMatrix();
+            glTranslatef(teapotX, teapotY, 0);
+
+            if(show[2]) glmDraw(uparmR, GLM_MATERIAL);///Week13 step03-1
+        glPopMatrix();
+```
+
+```cpp
+int oldX = 0, oldY = 0; ///Week13 step03-2
+void motion(int x, int y){ ///Week13 step03-2
+    teapotX += (x - oldX)/150.0; ///Week13 step03-2
+    teapotY -= (y - oldY)/150.0; ///Week13 step03-2
+    oldX = x;
+    oldY = y;
+    printf("glTranslatef(%f, %f, 0);\n", teapotX, teapotY);
+    glutPostRedisplay(); ///Week13 step03-2
+} ///Week13 step03-2
+```
+
+在 int main()裡面
+```cpp
+    glutMotionFunc(motion); ///Week13 step03-3
+```
+
+## step03-3_修改 .gitignore 清單, 把一些檔案也上傳。 
+- .gitignore 要記得存檔
+	- # 你在前面加 #號 就可以註解掉
+	- # 因為我們希望也備份 3D model 檔
+	- # *.obj
+	- # 因為我們希望也備份 libfreeglut.dll 及 opencv的 .dll 才能讓程式執行
+	- # *.dll 
+	- # 因為我們希望也備份 freeglut 的 lib 目錄裡的 libfreeglut32.a 等檔案
+	- # *.a
+	- # *.lib
+- git status (紅色)
+- git add . (加入備分的清單)
+- git status (綠色)
+- 要把你的名字、email都設好
+- git config --global user.email jsyeh@mail.mcu.edu.tw
+- git config --global user.name jsyeh
+- git commit -m week13
+- git push
