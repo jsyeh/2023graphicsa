@@ -30,7 +30,9 @@ void display()
             lowarmR = glmReadOBJ("model/lowarmR.obj");///Week13 step03-1
             ///glmUnitize(body); ///week13 step02-1 這行之後會改
         }
+        glColor3f(1,0,0);
         if(show[0]) glmDraw(head, GLM_MATERIAL);///Week13 step03-1
+        glColor3f(0,1,0);
         if(show[1]) glmDraw(body, GLM_MATERIAL);///week13 step02-1這行之後會改
         glPushMatrix();
             glTranslatef(teapotX, teapotY, 0);
