@@ -6,8 +6,8 @@ GLMmodel * head = NULL; ///week13 step02-1
 GLMmodel * body = NULL; ///week13 step02-1
 GLMmodel * uparmR = NULL; ///week13 step02-1
 GLMmodel * lowarmR = NULL; ///week13 step02-1
-int show[4] = {0, 0, 1, 0};/// week14_step03-1 用 show[i] 來決定要不要顯示
-int ID = 2;///0:頭 1身體 2上手臂 3下手臂  ///week14_step03-1
+int show[4] = {1, 1, 1, 1};/// week14_step03-1 用 show[i] 來決定要不要顯示
+int ID = 3;///0:頭 1身體 2上手臂 3下手臂  ///week14_step03-1
 void keyboard(unsigned char key, int x, int y) {/// week13 step03-1
     if(key=='0') ID = 0; ///week14_step02-2
     if(key=='1') ID = 1; ///week14_step02-2
@@ -44,20 +44,27 @@ void display()
         if(show[1]) glmDraw(body, GLM_MATERIAL);///week13 step02-1這行之後會改
 
         glPushMatrix();
-            ///glTransaltef(-teapotX, -teapotY, 0); ///week14_step03-1_TRT建出來
-            ///glRotatef(angle, 0, 0, 1); ///week14_step03-1_TRT建出來
-            glTranslatef(teapotX, teapotY, 0); ///week14_step03-1_TRT建出來
+            glTranslatef(-1.200000, +0.453333, 0); ///wee14_step03-1 反過來
+            glRotatef(angle, 0, 0, 1); ///week14_step03-1_TRT建出來
+            //glTranslatef(teapotX, teapotY, 0); ///week14_step03-1_TRT建出來
+            glTranslatef(1.200000, -0.453333, 0); ///week14_step03-1_的結果
 
             if(ID==2) glColor3f(1,0,0); ///選定的,設紅色
             else glColor3f(1,1,1); ///沒選定,設白色
             if(show[2]) glmDraw(uparmR, GLM_MATERIAL);///Week13 step03-1
+            glPushMatrix();
+                glTranslatef(-1.959999, +0.113333, 0);
+                glRotatef(angle, 0, 0, 1);
+                glTranslatef(1.959999, -0.113333, 0);
+
+                if(ID==3) glColor3f(1,0,0); ///選定的,設紅色
+                else glColor3f(1,1,1); ///沒選定,設白色
+                if(show[3]) glmDraw(lowarmR, GLM_MATERIAL);///Week13 step03-1
+            glPopMatrix();
         glPopMatrix();
 
-        if(ID==3) glColor3f(1,0,0); ///選定的,設紅色
-        else glColor3f(1,1,1); ///沒選定,設白色
-        if(show[3]) glmDraw(lowarmR, GLM_MATERIAL);///Week13 step03-1
     glPopMatrix();
-    glColor3f(0, 1, 0);
+    glColor3f(0, 1, 0);///week14_step03-1 放個小茶壼,在正中心,當成參考點
     glutSolidTeapot( 0.02 );///week14_step03-1 放個小茶壼,在正中心,當成參考點
     glutSwapBuffers();
 }
@@ -67,6 +74,7 @@ void motion(int x, int y){ ///Week13 step03-2
     teapotY -= (y - oldY)/150.0; ///Week13 step03-2
     oldX = x;
     oldY = y;
+    angle = x; ///week14_step03-1
     printf("glTranslatef(%f, %f, 0);\n", teapotX, teapotY);
     glutPostRedisplay(); ///Week13 step03-2
 } ///Week13 step03-2

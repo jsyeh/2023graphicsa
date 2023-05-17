@@ -2064,3 +2064,375 @@ void motion(int x, int y){ ///Week13 step03-2
 - git config --global user.name jsyeh
 - git commit -m week13
 - git push
+
+
+# Week14
+電腦圖學 2023-05-17 Week14
+1. 主題: 切換關節
+2. 主題: 切換移動、旋轉
+3. 整合打光、貼圖
+4. 主題: timer計時器、內插動作
+
+
+1. 請先裝 Git, 把我們的專案clone下載
+	- git clone 你的網址(比較慢)
+	- 
+2. 今天的程式: timer
+	- 先把 freeglut 再裝一次, 先照開學前幾週的作法
+	- glutTimerFunc(等多久, timer, 參數);
+	- 另外要準備好 void timer(int t) { ... }
+	- CodeBlocks: File-New-Project, GLUT專案 week14-1_timer 專案
+
+## step01-1_今天第一個主題, 是學會 timer()計時器的技巧。要用到 glutTimerFunc(等多久, timer, 參數)來設定。等的時間單位是 ms 千分之一秒。在範例裡,執行時會先等2秒鐘,然後開始第一個timer叫醒。timer()會改變angle值, 並更新畫面。巧妙的地方, 在 timer()裡, 又會再設定下一個timer()啟動的時間
+
+```cpp
+///Week14-1_timer
+#include <GL/glut.h>
+float angle=0;
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+        glRotatef(angle, 0, 0, 1);
+        glutSolidTeapot( 0.3 );
+    glPopMatrix();
+    glutSwapBuffers();
+}
+void timer(int t) ///step01-1 你的 timer()函式,做對應動作
+{
+    glutTimerFunc(500, timer, t+1); ///step01-1 設定下一個鬧鐘
+    angle += 90; ///增加90度
+    glutPostRedisplay(); ///重畫畫面
+}
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
+    glutCreateWindow("week14");
+
+    glutDisplayFunc(display);
+    glutTimerFunc(2000, timer, 0); ///step01-1 設定timer函式
+
+    glutMainLoop();
+}
+```
+
+## step01-2_新的專案 week14-2_timer_play 想要改用 keyboard()來觸發 timer() 而不要在 main()裡直接觸發。
+
+```cpp
+///Week14-2_timer_play 用鍵盤來播放
+#include <GL/glut.h>
+float angle=0;
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+        glRotatef(angle, 0, 0, 1);
+        glutSolidTeapot( 0.3 );
+    glPopMatrix();
+    glutSwapBuffers();
+}
+void timer(int t) ///step01-1 你的 timer()函式,做對應動作
+{
+    glutTimerFunc(500, timer, t+1); ///step01-1 設定下一個鬧鐘
+    angle += 90; ///增加90度
+    glutPostRedisplay(); ///重畫畫面
+}
+void keyboard(unsigned char key, int x, int y)
+{
+    glutTimerFunc(0, timer, 0);
+}
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
+    glutCreateWindow("week14");
+
+    glutDisplayFunc(display);
+    glutKeyboardFunc(keyboard); ///step01-2 用 keyboard()
+    ///glutTimerFunc(2000, timer, 0); ///step01-1 設定timer函式
+
+    glutMainLoop();
+}
+```
+
+## step01-3_利用Excel來示範,什麼是alpha內插, 能用 alpha乘 新+(1-alpha)乘舊
+
+## step02-1_新的專案 week14-3_timer_alpha_interpolation, 裡面增加 mouse() 負責處理按下去、放開來,對應的動作。增加 motion() 負責即時更新角度,讓你看到角度。最後 timer()裡, 想要用 100格的內插, 所以t小於100時,持續設定下一次 timer, 等待的時間不要太久。alpha算出來, 用 alpha 來算出角度的值。
+
+```cpp
+///Week14-3_timer_alpha_interpolation
+#include <GL/glut.h>
+float angle=0, oldAngle=0, newAngle=0; ///step02-1 宣告變數
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+        glRotatef(angle, 0, 0, 1);
+        glutSolidTeapot( 0.3 );
+    glPopMatrix();
+    glutSwapBuffers();
+}
+void timer(int t) ///step01-1 你的 timer()函式,做對應動作
+{
+    if(t<100) glutTimerFunc(50, timer, t+1); ///step02-1 在100之內,設定下一個鬧鐘
+    float alpha = t/ 100.0;///step02-1 alpha 介於0.00~1.00之間
+    angle = newAngle*alpha + (1-alpha) * oldAngle; ///step02-1 alpha內插公式
+    glutPostRedisplay(); ///重畫畫面
+}
+void motion(int x, int y) ///step02-1
+{
+    angle = x; ///step02-1 即時更新角度
+    glutPostRedisplay(); ///step02-1 重畫畫面
+}
+void mouse(int button, int state, int x, int y) ///step02-1
+{
+    if(state==GLUT_DOWN) oldAngle = x; ///step02-1 按下去
+    if(state==GLUT_UP) newAngle = x; ///step02-1 放開來
+    glutPostRedisplay(); ///step02-1 重畫畫面
+}
+void keyboard(unsigned char key, int x, int y)
+{
+    glutTimerFunc(0, timer, 0);
+}
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
+    glutCreateWindow("week14");
+
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse); ///step02-1 按下去,表示起點, 放開來,表示終點
+    glutMotionFunc(motion); ///step02-1 當mouse在motion時,即時更新畫面
+    glutKeyboardFunc(keyboard); ///step01-2 用 keyboard()
+
+    glutMainLoop();
+}
+```
+
+## step02-2_回到Final_Project這個專案, 先利用Git指令, 把前面的 week14-1 到 week14-3 都備份到雲端。接下來, 開啟 Final_Project, 我們想要選定關節, 利用 keyboard()配合 ID變數,來做到。按'0'就把ID=0; 按'1'就把ID=1; 所以在 display()裡, if(ID==0) 就在畫頭的地方設定紅色, else設白色。這樣我們便能挑選不同的關節
+
+```cpp
+///week12-5_TRT_keyboard_mouse 要用 keyboard mouse 來操控
+#include <stdio.h>
+#include <GL/glut.h>
+#include "glm.h" ///week13 step02-1
+GLMmodel * head = NULL; ///week13 step02-1
+GLMmodel * body = NULL; ///week13 step02-1
+GLMmodel * uparmR = NULL; ///week13 step02-1
+GLMmodel * lowarmR = NULL; ///week13 step02-1
+int show[4] = {1, 1, 1, 1};/// week14_step02-2 用 show[i] 來決定要不要顯示
+int ID = 0;///0:頭 1身體 2上手臂 3下手臂  ///week14_step02-2
+void keyboard(unsigned char key, int x, int y) {/// week13 step03-1
+    if(key=='0') ID = 0; ///week14_step02-2
+    if(key=='1') ID = 1; ///week14_step02-2
+    if(key=='2') ID = 2; ///week14_step02-2
+    if(key=='3') ID = 3; ///week14_step02-2
+    ///if(key=='0') show[0] = !show[0];/// week13 step03-1
+    ///if(key=='1') show[1] = !show[1];/// week13 step03-1
+    ///if(key=='2') show[2] = !show[2];/// week13 step03-1
+    ///if(key=='3') show[3] = !show[3];/// week13 step03-1
+    glutPostRedisplay();
+} ///原來的keyboard先註解、不要用
+FILE * fout = NULL; ///step02-2 一開始,檔案沒有開, NULL
+FILE * fin = NULL; ///step02-2 要讀檔用的指標, 一開始也是 NULL
+float teapotX=0, teapotY=0; ///幫我們看移動值
+float angle=0, angle2=0, angle3=0;///step03-2 擺動作
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+        glScalef(0.2, 0.2, 0.2); ///week13_step02-2
+        if(body==NULL){///week13 step02-1
+            head = glmReadOBJ("model/head.obj");
+            body = glmReadOBJ("model/body.obj");///week13 step02-1
+            uparmR = glmReadOBJ("model/uparmR.obj");///Week13 step03-1
+            lowarmR = glmReadOBJ("model/lowarmR.obj");///Week13 step03-1
+            ///glmUnitize(body); ///week13 step02-1 這行之後會改
+        }
+        if(ID==0) glColor3f(1,0,0); ///選定的,設紅色
+        else glColor3f(1,1,1); ///沒選定,設白色
+        if(show[0]) glmDraw(head, GLM_MATERIAL);///Week13 step03-1
+
+        if(ID==1) glColor3f(1,0,0); ///選定的,設紅色
+        else glColor3f(1,1,1); ///沒選定,設白色
+        if(show[1]) glmDraw(body, GLM_MATERIAL);///week13 step02-1這行之後會改
+
+        glPushMatrix();
+        
+            glTranslatef(teapotX, teapotY, 0);
+
+            if(ID==2) glColor3f(1,0,0); ///選定的,設紅色
+            else glColor3f(1,1,1); ///沒選定,設白色
+            if(show[2]) glmDraw(uparmR, GLM_MATERIAL);///Week13 step03-1
+        glPopMatrix();
+
+        if(ID==3) glColor3f(1,0,0); ///選定的,設紅色
+        else glColor3f(1,1,1); ///沒選定,設白色
+        if(show[3]) glmDraw(lowarmR, GLM_MATERIAL);///Week13 step03-1
+    glPopMatrix();
+    glutSwapBuffers();
+}
+int oldX = 0, oldY = 0; ///Week13 step03-2
+void motion(int x, int y){ ///Week13 step03-2
+    teapotX += (x - oldX)/150.0; ///Week13 step03-2
+    teapotY -= (y - oldY)/150.0; ///Week13 step03-2
+    oldX = x;
+    oldY = y;
+    printf("glTranslatef(%f, %f, 0);\n", teapotX, teapotY);
+    glutPostRedisplay(); ///Week13 step03-2
+} ///Week13 step03-2
+void mouse(int button, int state, int x, int y)
+{
+    if(state==GLUT_DOWN){
+        oldX = x; ///teapotX = (x-150)/150.0;
+        oldY = y; ///teapotY = (150-y)/150.0;
+        angle = x;
+        ///printf("glTranslatef(%f, %f, 0);\n", teapotX, teapotY);
+        ///if(fout==NULL) fout = fopen("file4.txt", "w"); ///step02-2 沒開檔,就開
+        ///fprintf(fout, "%f %f\n", teapotX, teapotY); ///step02-2 要再存座標
+    }
+    display();
+}
+//void keyboard(unsigned char key, int x, int y) ///step02-2 keyboard函式
+//{
+//    if(fin==NULL){ ///step02-2 如果檔案還沒 fopen(), 就開它
+//        fclose(fout); ///前面mouse會開fout指標, 所以要關掉
+//        fin = fopen("file4.txt", "r"); ///step02-2 沒開檔,就開
+//    }
+//    ///fscanf(fin, "%f %f", &teapotX, &teapotY); ///step02-2 真的讀檔
+//    display(); ///step02-2 重畫畫面
+//}
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
+    glutCreateWindow("week12");
+
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse);
+    glutMotionFunc(motion); ///Week13 step03-3
+    glutKeyboardFunc(keyboard); ///step02-2 keyboard要做事囉(開檔、讀檔)
+
+    glutMainLoop();
+}
+```
+
+## step03-1_利用 teapotX, teapotY 來協助找到 T-R-T 的關鍵 glTranslatef()的值, 讓旋轉中心能正確定位。這樣能做一正確旋轉的上手臂。再利用 glPushMatrix() glPopMatrix() 加深一層後, 把下手臂也做出來。
+
+```cpp
+///week12-5_TRT_keyboard_mouse 要用 keyboard mouse 來操控
+#include <stdio.h>
+#include <GL/glut.h>
+#include "glm.h" ///week13 step02-1
+GLMmodel * head = NULL; ///week13 step02-1
+GLMmodel * body = NULL; ///week13 step02-1
+GLMmodel * uparmR = NULL; ///week13 step02-1
+GLMmodel * lowarmR = NULL; ///week13 step02-1
+int show[4] = {1, 1, 1, 1};/// week14_step03-1 用 show[i] 來決定要不要顯示
+int ID = 3;///0:頭 1身體 2上手臂 3下手臂  ///week14_step03-1
+void keyboard(unsigned char key, int x, int y) {/// week13 step03-1
+    if(key=='0') ID = 0; ///week14_step02-2
+    if(key=='1') ID = 1; ///week14_step02-2
+    if(key=='2') ID = 2; ///week14_step02-2
+    if(key=='3') ID = 3; ///week14_step02-2
+    ///if(key=='0') show[0] = !show[0];/// week13 step03-1
+    ///if(key=='1') show[1] = !show[1];/// week13 step03-1
+    ///if(key=='2') show[2] = !show[2];/// week13 step03-1
+    ///if(key=='3') show[3] = !show[3];/// week13 step03-1
+    glutPostRedisplay();
+} ///原來的keyboard先註解、不要用
+FILE * fout = NULL; ///step02-2 一開始,檔案沒有開, NULL
+FILE * fin = NULL; ///step02-2 要讀檔用的指標, 一開始也是 NULL
+float teapotX=0, teapotY=0; ///幫我們看移動值
+float angle=0, angle2=0, angle3=0;///step03-2 擺動作
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+        glScalef(0.2, 0.2, 0.2); ///week13_step02-2
+        if(body==NULL){///week13 step02-1
+            head = glmReadOBJ("model/head.obj");
+            body = glmReadOBJ("model/body.obj");///week13 step02-1
+            uparmR = glmReadOBJ("model/uparmR.obj");///Week13 step03-1
+            lowarmR = glmReadOBJ("model/lowarmR.obj");///Week13 step03-1
+            ///glmUnitize(body); ///week13 step02-1 這行之後會改
+        }
+        if(ID==0) glColor3f(1,0,0); ///選定的,設紅色
+        else glColor3f(1,1,1); ///沒選定,設白色
+        if(show[0]) glmDraw(head, GLM_MATERIAL);///Week13 step03-1
+
+        if(ID==1) glColor3f(1,0,0); ///選定的,設紅色
+        else glColor3f(1,1,1); ///沒選定,設白色
+        if(show[1]) glmDraw(body, GLM_MATERIAL);///week13 step02-1這行之後會改
+
+        glPushMatrix();
+            glTranslatef(-1.200000, +0.453333, 0); ///wee14_step03-1 反過來
+            glRotatef(angle, 0, 0, 1); ///week14_step03-1_TRT建出來
+            //glTranslatef(teapotX, teapotY, 0); ///week14_step03-1_TRT建出來
+            glTranslatef(1.200000, -0.453333, 0); ///week14_step03-1_的結果
+
+            if(ID==2) glColor3f(1,0,0); ///選定的,設紅色
+            else glColor3f(1,1,1); ///沒選定,設白色
+            if(show[2]) glmDraw(uparmR, GLM_MATERIAL);///Week13 step03-1
+            glPushMatrix();
+                glTranslatef(-1.959999, +0.113333, 0);
+                glRotatef(angle, 0, 0, 1);
+                glTranslatef(1.959999, -0.113333, 0);
+
+                if(ID==3) glColor3f(1,0,0); ///選定的,設紅色
+                else glColor3f(1,1,1); ///沒選定,設白色
+                if(show[3]) glmDraw(lowarmR, GLM_MATERIAL);///Week13 step03-1
+            glPopMatrix();
+        glPopMatrix();
+
+    glPopMatrix();
+    glColor3f(0, 1, 0);///week14_step03-1 放個小茶壼,在正中心,當成參考點
+    glutSolidTeapot( 0.02 );///week14_step03-1 放個小茶壼,在正中心,當成參考點
+    glutSwapBuffers();
+}
+int oldX = 0, oldY = 0; ///Week13 step03-2
+void motion(int x, int y){ ///Week13 step03-2
+    teapotX += (x - oldX)/150.0; ///Week13 step03-2
+    teapotY -= (y - oldY)/150.0; ///Week13 step03-2
+    oldX = x;
+    oldY = y;
+    angle = x; ///week14_step03-1
+    printf("glTranslatef(%f, %f, 0);\n", teapotX, teapotY);
+    glutPostRedisplay(); ///Week13 step03-2
+} ///Week13 step03-2
+void mouse(int button, int state, int x, int y)
+{
+    if(state==GLUT_DOWN){
+        oldX = x; ///teapotX = (x-150)/150.0;
+        oldY = y; ///teapotY = (150-y)/150.0;
+        angle = x;
+        ///printf("glTranslatef(%f, %f, 0);\n", teapotX, teapotY);
+        ///if(fout==NULL) fout = fopen("file4.txt", "w"); ///step02-2 沒開檔,就開
+        ///fprintf(fout, "%f %f\n", teapotX, teapotY); ///step02-2 要再存座標
+    }
+    display();
+}
+//void keyboard(unsigned char key, int x, int y) ///step02-2 keyboard函式
+//{
+//    if(fin==NULL){ ///step02-2 如果檔案還沒 fopen(), 就開它
+//        fclose(fout); ///前面mouse會開fout指標, 所以要關掉
+//        fin = fopen("file4.txt", "r"); ///step02-2 沒開檔,就開
+//    }
+//    ///fscanf(fin, "%f %f", &teapotX, &teapotY); ///step02-2 真的讀檔
+//    display(); ///step02-2 重畫畫面
+//}
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
+    glutCreateWindow("week12");
+
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse);
+    glutMotionFunc(motion); ///Week13 step03-3
+    glutKeyboardFunc(keyboard); ///step02-2 keyboard要做事囉(開檔、讀檔)
+
+    glutMainLoop();
+}
+```
