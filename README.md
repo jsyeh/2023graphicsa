@@ -2436,3 +2436,228 @@ int main(int argc, char** argv)
     glutMainLoop();
 }
 ```
+
+# Week15
+電腦圖學 2023-05-24 Week15
+1. 主題: 攝影機 Camera
+2. 主題: 投影、運鏡  gluPerspective(), gluLookAt()
+3. 期末作品
+
+## step01-1_今天上課的重點是攝影機, 所以我們從課本的範例 jsyeh.org 的 3dcg10 下載 windows.zip 及 data.zip, 解壓縮好, 執行 Projection.exe 來看看攝影機的一些設定。首先是測試 gluLookAt()的9個參數, 前3個是eye眼睛的座標(從哪裡看), 中間3個是center座標(看哪裡)
+
+
+
+## step01-2_在 gluLookAt()的最後3個參數, 是 up 向量。前面的 eye, center 會決定攝影機的一個軸線, 從 eye 射向 center。不過要完整決定你的矩陣時, 還有一個變化的, 就是攝影機照著軸線, 再 360度轉動。這個就由 up 向量來決定。舉例來說, 拍照時, 直拍、橫拍,  up 向量就不一樣。有時候斜拍, up向量就向著斜斜的方向。有了 9個參數, 便能決定攝影機是怎麼拍攝的。
+
+
+## step01-3_接下來介紹課本範例裡的 gluPerspective()裡面的參數。這些字其實不是英文, 而是專有名詞的縮寫。 fov 是 field of view 視野, 也就是你看到的角度範圍。 fovy 是在 y方向的 fov。如果 fov的角度越大, 則東西自然就會變小。如果fov的角度越小, 則目光如豆, 看到的東西佔的比例就變大。 aspect 是 aspect ratio 長寬比的意思, 通常要對應你的視窗的長度、寬度, 來決定你的 aspect 的值要設多少。 zNear zFar 是在 z方向的近的切一刀、遠的切一刀, 決定哪個範圍裡的內容會被投影到方塊裡, 再壓扁畫出來。
+
+fovy: field of view (y方向) 視野的角度
+aspect: aspect ratio 長寬比
+
+
+## step02-1_開啟 GLUT 專案 week15-1_gluPerspective 要試試看 gluPerspective()的參數。在 GLUT 專案的範例裡, 有個 resize()函式, 裡面會有 glFrustum()函式, 設好左右上下前後的邊界, 變成一個透視投影的矩陣。(在開 GLUT專案時, 我們已經進化, 先使用 Git 把 GitHub 的倉庫 clone 複製下來, 所以在硬碟裡的 2023graphicsa 已經有 freeglut 可以用, 所以方便很多。)
+
+## step02-2_在 week15-1_gluPerspective的範例裡, 我們試著把GLUT專案範例裡的 resize()裡的 glFrustum() 改成 glOrtho() 看看「透視投影」與「垂直投影」的差別。
+
+```cpp
+static void resize(int width, int height)
+{
+    const float ar = (float) width / (float) height;
+
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);  ///week15_step02_02 切換成投影矩陣
+    glLoadIdentity(); ///week15_step02_02 還原成單位矩陣
+    ///glFrustum(-ar, ar, -1.0, 1.0, 2.0, 100.0);
+    ///glOrtho(-ar*3, ar*3, -1*3, 1*3, -100, +100);
+    gluPerspective(60, ar, 0.01, 1000);
+///week15_step02_02 角度, 比例, 近的, 遠的
+
+
+    glMatrixMode(GL_MODELVIEW);   ///week15_step02_02 切換成 Model View 矩陣
+    glLoadIdentity(); ///week15_step02_02 還原成單位矩陣
+}
+```
+
+## step02-3_新增GLUT專案 week15-2_gluLookAt, 要把今天教的觀念都實作看看。首先是先寫出10行精簡的GLUT程式, 增加 glutReshapeFunc(reshape) 讓它可在調整視窗長寬時, 修改 glViewport()看到的2D範圍, 再利用 glMatrixMode()來切換投影矩陣、model view矩陣。投影矩陣裡, 先用identity矩陣, 再設定gluPerspective(60, ar, 0.01, 1000)設好透視投影。但變成一片白茫茫, 因為你困在白色茶壼裡, 所以需要在 model view 裡, 設定 gluLookAt() 把你的 camera 設好。
+
+## step02-4_再增加motion()函式, 看看 gluLookAt()隨著mouse motion時,改變攝影機的位置, 也就是計算出 eyeX 與 eyeY 的值, 再去改變 gluLookAt()的參數
+
+```cpp
+///Week15-2_glutLookAt
+///函式 reshape(), display(), 再加上 motion() 幫我們把 camera動來動去
+#include <GL/glut.h>
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glutSolidTeapot( 0.3 );
+    glutSwapBuffers();
+}
+void reshape(int w, int h) {
+
+    glViewport(0, 0, w, h); ///視窗裡,會看到的2D範圍
+
+    float ar = w / (float) h; ///aspect ratio 長寬比
+
+    glMatrixMode(GL_PROJECTION); ///先切換到 Project 矩陣
+    glLoadIdentity(); ///矩陣清空,成為單位矩陣(最一開始的矩陣)
+    gluPerspective(60, ar, 0.01, 1000); ///現在一片空白,因為我們在茶壼裡
+
+    glMatrixMode(GL_MODELVIEW); ///做好後, 馬上切回 model view 矩陣
+    glLoadIdentity(); ///矩陣清空,成為單位矩陣(最一開始的矩陣)
+    gluLookAt(0,0,1,  0,0,0,  0,1,0);
+    ///在0,0,1 看著茶壼0,0,0, up是0,1,0
+    glutPostRedisplay();
+}
+float eyeX = 0, eyeY = 0;
+void motion(int x, int y) {
+    eyeX = (x-150.0)/150.0;
+    eyeY = (150.0-y)/150.0;
+    glMatrixMode(GL_MODELVIEW); ///做好後, 馬上切回 model view 矩陣
+    glLoadIdentity(); ///矩陣清空,成為單位矩陣(最一開始的矩陣)
+    gluLookAt(eyeX, eyeY, 1,  0,0,0,  0,1,0);
+    glutPostRedisplay();
+}
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("week15");
+
+    glutMotionFunc(motion);///
+    glutDisplayFunc(display);
+    glutReshapeFunc(reshape);///老師把名字變reshape
+
+    glutMainLoop();
+}
+```
+
+## step03-1_把期末作品的範例拿來再練習一下, 把原本的 float angle=0; 改成陣列 float angle[20]={}; 再把 display()裡,每個關節的部分, 對應不同的 angle[i] 的值, 而 motion() 裡則是 angle[ID] += x-oldX;
+
+```cpp
+///Week15_step03_1 程式用陣列: (模型組合好了)切換不同的關節,要改變不同的角度
+/// int angle[20]; angle[0] angle[1] ...  用它們來旋轉
+/// motion()時, 用 angle[ID]來改
+```
+
+```cpp
+float angle[20] = {};///week15_step03_1 變陣列
+```
+
+```cpp
+void motion(int x, int y){ ///Week13 step03-2
+    teapotX += (x - oldX)/150.0; ///Week13 step03-2
+    teapotY -= (y - oldY)/150.0; ///Week13 step03-2
+    angle[ID] += (x - oldX); ///week15_step03_1 改用陣列, 且程式放高一點
+    ///angle = x; ///week14_step03-1
+    oldX = x;
+    oldY = y;
+    printf("glTranslatef(%f, %f, 0);\n", teapotX, teapotY);
+    glutPostRedisplay(); ///Week13 step03-2
+} ///Week13 step03-2
+```
+
+```cpp
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+        glScalef(0.2, 0.2, 0.2); ///week13_step02-2
+        if(body==NULL){///week13 step02-1
+            head = glmReadOBJ("model/head.obj");
+            body = glmReadOBJ("model/body.obj");///week13 step02-1
+            uparmR = glmReadOBJ("model/uparmR.obj");///Week13 step03-1
+            lowarmR = glmReadOBJ("model/lowarmR.obj");///Week13 step03-1
+            ///glmUnitize(body); ///week13 step02-1 這行之後會改
+        }
+        if(ID==0) glColor3f(1,0,0); ///選定的,設紅色
+        else glColor3f(1,1,1); ///沒選定,設白色
+        if(show[0]) glmDraw(head, GLM_MATERIAL);///Week13 step03-1
+
+        if(ID==1) glColor3f(1,0,0); ///選定的,設紅色
+        else glColor3f(1,1,1); ///沒選定,設白色
+        if(show[1]) glmDraw(body, GLM_MATERIAL);///week13 step02-1這行之後會改
+
+        glPushMatrix();
+            glTranslatef(-1.200000, +0.453333, 0); ///wee14_step03-1 反過來
+            glRotatef(angle[2], 0, 0, 1); ///week15_step03_1 改用陣列
+            glTranslatef(1.200000, -0.453333, 0); ///week14_step03-1_的結果
+
+            if(ID==2) glColor3f(1,0,0); ///選定的,設紅色
+            else glColor3f(1,1,1); ///沒選定,設白色
+            if(show[2]) glmDraw(uparmR, GLM_MATERIAL);///Week13 step03-1
+            glPushMatrix();
+                glTranslatef(-1.959999, +0.113333, 0);
+                glRotatef(angle[3], 0, 0, 1); ///week15_step03_1 改用陣列
+                glTranslatef(1.959999, -0.113333, 0);
+
+                if(ID==3) glColor3f(1,0,0); ///選定的,設紅色
+                else glColor3f(1,1,1); ///沒選定,設白色
+                if(show[3]) glmDraw(lowarmR, GLM_MATERIAL);///Week13 step03-1
+            glPopMatrix();
+        glPopMatrix();
+
+    glPopMatrix();
+    glColor3f(0, 1, 0);///week14_step03-1 放個小茶壼,在正中心,當成參考點
+    glutSolidTeapot( 0.02 );///week14_step03-1 放個小茶壼,在正中心,當成參考點
+    glutSwapBuffers();
+}
+```
+
+
+## step03-2_把期末作品裡, keyboard()裡 if(key=='s') 裡面利用迴圈來寫檔,把20個陣列的值,都在到檔案裡。 if(key=='r')則是讀檔, 把陣列的值讀入後, 重畫畫面。
+
+```cpp
+///Week15_step03_2 把angle[i]存檔's', 再播放動畫'r'
+///week12-5_TRT_keyboard_mouse 要用 keyboard mouse 來操控
+```
+
+```cpp
+FILE * fout = NULL; ///step02-2 一開始,檔案沒有開, NULL
+FILE * fin = NULL; ///step02-2 要讀檔用的指標, 一開始也是 NULL
+float angle[20] = {};///week15_step03_1 變陣列
+void keyboard(unsigned char key, int x, int y) {/// week13 step03-1
+    if(key=='0') ID = 0; ///week14_step02-2
+    if(key=='1') ID = 1; ///week14_step02-2
+    if(key=='2') ID = 2; ///week14_step02-2
+    if(key=='3') ID = 3; ///week14_step02-2
+    if(key=='s'){
+        if(fout==NULL) fout = fopen("motion.txt", "w");///week15_step03_2 寫檔案
+        for(int i=0; i<20; i++){ ///week15_step03_2 寫檔案
+            fprintf(fout, "%.2f ", angle[i] );///week15_step03_2 寫檔案, 小心,有空格
+        }
+        fprintf(fout, "\n");///week15_step03_2 寫檔案,後面有跳行
+    }else if(key=='r'){
+        if(fin==NULL) fin = fopen("motion.txt", "r");///week15_step03_2
+        for(int i=0; i<20; i++){
+            fscanf(fin, "%f", &angle[i] ); ///week15_step03_2
+        }
+        glutPostRedisplay();
+    }
+    ///if(key=='0') show[0] = !show[0];/// week13 step03-1
+    ///if(key=='1') show[1] = !show[1];/// week13 step03-1
+    ///if(key=='2') show[2] = !show[2];/// week13 step03-1
+    ///if(key=='3') show[3] = !show[3];/// week13 step03-1
+    glutPostRedisplay();
+} ///原來的keyboard先註解、不要用
+```
+
+## step03-3_Git 備份到雲端
+
+```
+cd desktop
+git clone https://github.com/.../2023graphicsa
+cd 2023graphicsa
+開檔案總管 start .
+(要 Save Everything)
+
+git status
+git add .
+git status
+
+git config --global user.email jsyeh@gmail.com
+git config --global user.name jsyeh
+git commit -m week15
+
+git push
+```
