@@ -7,8 +7,10 @@ void mouse(int button, int state, int x, int y) {
 }
 
 void motion(int x, int y) {
-    teapotX = (x-150) / 150.0;///angle += x - oldX; ///
-    teapotY = (150-y) / 150.0;///oldX = x;          ///
+    teapotX = (x-150) / 150.0;
+    teapotY = (150-y) / 150.0;
+    angle += x - oldX;
+    oldX = x;
     printf("glTranslatef(%.3f , %.3f , 0 );\n", teapotX, teapotY);
     glutPostRedisplay();
 }
@@ -16,10 +18,10 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glPushMatrix();
         glColor3f(1,1,1);
-        ///glTranslatef(....);
-        ///glRotatef(angle, 0, 0, 1);
-        ///glTranslatef(....);
-        glTranslatef(teapotX, teapotY, 0);
+        glTranslatef(-0.420 , +0.047 , 0 );///glTranslatef(....);
+        glRotatef(angle, 0, 0, 1);
+        glTranslatef(0.420 , -0.047 , 0 );///glTranslatef(....);
+        ///glTranslatef(teapotX, teapotY, 0);
         glutSolidTeapot( 0.3 );
     glPopMatrix();
 
