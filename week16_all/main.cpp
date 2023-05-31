@@ -34,6 +34,7 @@ float OldAngle[20]={}, NewAngle[20]={};
 float OldAngle2[20]={}, NewAngle2[20]={};
 int ID=0; ///0:head, 1,2:left, 3,4:right hand, 5,6,7:left leg, 8,9,10:right leg
 void timer(int t) {
+    printf("t:%d\n", t);
     glutTimerFunc(20, timer, t+1);
     if(t%50==0){ ///新的開始,要讀新的動作
         if(fin==NULL) fin = fopen("motion.txt", "r");
@@ -44,7 +45,7 @@ void timer(int t) {
             fscanf(fin, "%f", &NewAngle2[i] );
         }
     }
-    float alpha = t / 50.0;
+    float alpha = (t%50) / 50.0;
     for(int i=0; i<20; i++){
         angle[i] = alpha * NewAngle[i] + (1-alpha) * OldAngle[i];
         angle2[i] = alpha * NewAngle2[i] + (1-alpha) * OldAngle2[i];
