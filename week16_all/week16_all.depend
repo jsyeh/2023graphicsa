@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1685500136 source:c:\users\administrator\desktop\2023graphicsa\week16_all\main.cpp
+1685501933 source:c:\users\administrator\desktop\2023graphicsa\week16_all\main.cpp
 	<stdio.h>
 	<opencv/highgui.h>
 	<opencv/cv.h>
